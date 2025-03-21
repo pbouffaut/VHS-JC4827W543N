@@ -178,7 +178,7 @@ void playAviFile(char *avifile)
     avi_close();
     Serial.println("AVI end");
 
-    // avi_show_stat();
+    avi_show_stat();
   }
   else
   {
