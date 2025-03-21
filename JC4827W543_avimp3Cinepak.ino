@@ -15,17 +15,11 @@
  *   SD:
  *     Copy files to SD card
  ******************************************************************************/
-// const char *root = "/root";
 const char *root = "/root";
 char *avi_filename = (char *)"/root/andor.avi";
-// char *avi_filename = (char *)"/root/AviMp3Cinepak272p30fps.avi";
 
-// Dev Device Pins: <https://github.com/moononournation/Dev_Device_Pins.git>
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.5)
 
-// #include <FFat.h>
-// #include <LittleFS.h>
-// #include <SPIFFS.h>
 #include <SD.h>
 #include <SD_MMC.h>
 
@@ -37,22 +31,7 @@ uint16_t *output_buf;
 
 void setup()
 {
-  // #ifdef DEV_DEVICE_INIT
-  //   DEV_DEVICE_INIT();
-  // #endif
-
   Serial.begin(115200);
-  // Serial.setDebugOutput(true);
-  // while(!Serial);
-  // Serial.println("AviPcmu8Mjpeg");
-
-  // If display and SD shared same interface, init SPI first
-  // #ifdef SPI_SCK
-  //   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-  // #endif
-
-  // Init Display
-  // if (!gfx->begin())
   if (!gfx->begin())
   {
     Serial.println("gfx->begin() failed!");
@@ -65,9 +44,6 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 #endif
 
-  // gfx->setTextColor(WHITE, BLACK);
-  // gfx->setTextBound(60, 60, 240, 240);
-
 #ifdef AUDIO_EXTRA_PRE_INIT
   AUDIO_EXTRA_PRE_INIT();
 #endif
@@ -79,21 +55,10 @@ void setup()
   digitalWrite(AUDIO_MUTE, HIGH);
 #endif
 
-// #if defined(SD_D1)
-//   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */, SD_D1, SD_D2, SD_CS /* D3 */);
-//   if (!SD_MMC.begin(root, false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
-// #elif defined(SD_SCK)
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
   if (!SD_MMC.begin(root, true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_DEFAULT))
-// #elif defined(SD_CS)
-//   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
-// #else
-  // if (!SD.begin())
-  // if (!LittleFS.begin(false, root))
-  // if (!SPIFFS.begin(false, root))
-// #endif
   {
     Serial.println("ERROR: SD Card mount failed!");
   }
@@ -177,7 +142,7 @@ void loop()
     avi_close();
     Serial.println("AVI end");
 
-    avi_show_stat();
+    // avi_show_stat();
   } else {
     Serial.println(AVI_strerror());
   }
