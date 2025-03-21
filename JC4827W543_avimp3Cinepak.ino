@@ -16,7 +16,8 @@
  *     Copy files to SD card
  ******************************************************************************/
 const char *root = "/root";
-char *avi_filename = (char *)"/root/andor.avi";
+char *avi_filename = (char *)"/root/andor_24fps_v10.avi";
+char *avi_filename2 = (char *)"/root/andor_24fps_v20.avi";
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.5)
 
@@ -138,9 +139,17 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 
 void loop()
 {
-  if (avi_open(avi_filename))
+  playAviFile(avi_filename);
+  delay(5000);
+  playAviFile(avi_filename2);
+  delay(5000);
+}
+
+void playAviFile(char *avifile)
+{
+  if (avi_open(avifile))
   {
-    Serial.println("AVI start");
+    Serial.printf("AVI start %s\n", avifile);
     gfx->fillScreen(BLACK);
 
     i2s_set_sample_rate(avi_aRate);
@@ -175,8 +184,6 @@ void loop()
   {
     Serial.println(AVI_strerror());
   }
-
-  delay(5000);
 }
 
 // Touch functions
