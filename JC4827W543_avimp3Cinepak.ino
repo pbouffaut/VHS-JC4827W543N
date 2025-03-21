@@ -20,6 +20,24 @@ char *avi_filename = (char *)"/root/andor.avi";
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.5)
 
+// Touch Controller
+#include "TAMC_GT911.h" // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
+#define TOUCH_SDA 8
+#define TOUCH_SCL 4
+#define TOUCH_INT 3
+#define TOUCH_RST 38
+#define TOUCH_WIDTH 480
+#define TOUCH_HEIGHT 272
+// Enum for swipe types.
+enum SwipeType
+{
+  NO_SWIPE,
+  SWIPE_RIGHT_TO_LEFT,
+  SWIPE_LEFT_TO_RIGHT
+};
+
+TAMC_GT911 touchController = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, TOUCH_WIDTH, TOUCH_HEIGHT);
+
 #include <SD.h>
 #include <SD_MMC.h>
 
@@ -37,6 +55,7 @@ void setup()
     Serial.println("gfx->begin() failed!");
   }
   gfx->fillScreen(RGB565_BLACK);
+  touchController.begin();
 
 #ifdef GFX_BL
   // Set the backlight of the screen to High intensity
@@ -78,34 +97,42 @@ void setup()
     avi_init();
 
     delay(2000);
-    listDir(SD, "/", 10);  // 10 levels deep recursion
+    listDir(SD, "/", 10); // 10 levels deep recursion
   }
 }
 
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+{
   Serial.printf("Listing directory: %s\n", dirname);
 
   File root = fs.open(dirname);
-  if (!root) {
-      Serial.println("Failed to open directory");
-      return;
+  if (!root)
+  {
+    Serial.println("Failed to open directory");
+    return;
   }
-  if (!root.isDirectory()) {
-      Serial.println("Not a directory");
-      return;
+  if (!root.isDirectory())
+  {
+    Serial.println("Not a directory");
+    return;
   }
 
   File file = root.openNextFile();
-  while (file) {
-      if (file.isDirectory()) {
-          Serial.printf("  DIR : %s\n", file.name());
-          if (levels) {
-              listDir(fs, file.name(), levels - 1);
-          }
-      } else {
-          Serial.printf("  FILE: %s  SIZE: %d bytes\n", file.name(), file.size());
+  while (file)
+  {
+    if (file.isDirectory())
+    {
+      Serial.printf("  DIR : %s\n", file.name());
+      if (levels)
+      {
+        listDir(fs, file.name(), levels - 1);
       }
-      file = root.openNextFile();
+    }
+    else
+    {
+      Serial.printf("  FILE: %s  SIZE: %d bytes\n", file.name(), file.size());
+    }
+    file = root.openNextFile();
   }
 }
 
@@ -137,15 +164,115 @@ void loop()
       {
         avi_draw(0, 0);
       }
+      // Detect the swipe gesture and handle it.
+      SwipeType swipe = detectSwipe();
+      if (swipe == SWIPE_RIGHT_TO_LEFT)
+      {
+        Serial.println("Right-to-left swipe detected!");
+      }
+      else if (swipe == SWIPE_LEFT_TO_RIGHT)
+      {
+        Serial.println("Left-to-right swipe detected!");
+      }
     }
 
     avi_close();
     Serial.println("AVI end");
 
     // avi_show_stat();
-  } else {
+  }
+  else
+  {
     Serial.println(AVI_strerror());
   }
 
   delay(5000);
+}
+
+// Touch functions
+
+/// @brief Detects if a swipe gesture occurred and returns its type.
+/// @return SwipeType indicating the detected swipe (or NO_SWIPE if none occurred).
+SwipeType detectSwipe()
+{
+  // Note: touchController.read() must be called before this function.
+  if (detectRightToLeftGesture_NoRead())
+  {
+    return SWIPE_RIGHT_TO_LEFT;
+  }
+  else if (detectLeftToRightGesture_NoRead())
+  {
+    return SWIPE_LEFT_TO_RIGHT;
+  }
+  return NO_SWIPE;
+}
+
+/// @brief Checks for a right-to-left swipe gesture using the current touch data.
+/// @return true if a right-to-left swipe is detected.
+bool detectRightToLeftGesture_NoRead()
+{
+  const int swipeThreshold = 50; // Minimum horizontal movement (in pixels) to qualify as a swipe
+  static bool tracking = false;  // Indicates if a gesture is being tracked
+  static int startX = 0;         // x coordinate when the touch began
+  static int lastX = 0;          // Most recent x coordinate during the touch
+
+  // Use the touch state that was updated in loop()
+  if (touchController.isTouched)
+  {
+    int currentX = touchController.points[0].x;
+    if (!tracking)
+    {
+      tracking = true;
+      startX = currentX;
+    }
+    lastX = currentX;
+  }
+  else
+  {
+    if (tracking)
+    {
+      int deltaX = startX - lastX; // Positive if moved from right to left
+      tracking = false;
+      if (deltaX > swipeThreshold)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// @brief Checks for a left-to-right swipe gesture using the current touch data.
+/// @return true if a left-to-right swipe is detected.
+bool detectLeftToRightGesture_NoRead()
+{
+  const int swipeThreshold = 50; // Minimum horizontal movement (in pixels) to qualify as a swipe
+  static bool tracking = false;  // Indicates if a gesture is being tracked
+  static int startX = 0;         // x coordinate when the touch began
+  static int lastX = 0;          // Most recent x coordinate during the touch
+
+  // Use the touch state that was updated in loop()
+  if (touchController.isTouched)
+  {
+    int currentX = touchController.points[0].x;
+    if (!tracking)
+    {
+      tracking = true;
+      startX = currentX;
+    }
+    lastX = currentX;
+  }
+  else
+  {
+    if (tracking)
+    {
+      int deltaX = lastX - startX; // Positive if moved from left to right
+      tracking = false;
+      if (deltaX > swipeThreshold)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
 }
