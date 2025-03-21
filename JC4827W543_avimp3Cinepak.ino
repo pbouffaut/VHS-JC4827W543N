@@ -164,16 +164,6 @@ void loop()
       {
         avi_draw(0, 0);
       }
-      // Detect the swipe gesture and handle it.
-      SwipeType swipe = detectSwipe();
-      if (swipe == SWIPE_RIGHT_TO_LEFT)
-      {
-        Serial.println("Right-to-left swipe detected!");
-      }
-      else if (swipe == SWIPE_LEFT_TO_RIGHT)
-      {
-        Serial.println("Left-to-right swipe detected!");
-      }
     }
 
     avi_close();
