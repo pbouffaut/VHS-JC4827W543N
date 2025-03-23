@@ -19,7 +19,7 @@ const char *root = "/root";
 char *avi_filename = (char *)"/root/andor_24fps_v10.avi";
 char *avi_filename2 = (char *)"/root/andor_full_v10.avi";
 
-#include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.5)
+#include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
 
 // Touch Controller
 #include "TAMC_GT911.h" // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
