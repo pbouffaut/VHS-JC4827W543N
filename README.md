@@ -9,7 +9,7 @@ This guide explains how to convert an MP4 video into an **AVI** file using the *
 ## ✅ Basic FFmpeg Command
 
 ```bash
-ffmpeg -i input.mp4 -ac 1 -c:a pcm_u8 -c:v cinepak -q:v 10 -vf "fps=24,scale=480:272" output.avi
+ffmpeg -i input.mp4 -ac 1 -c:a mp3 -c:v cinepak -q:v 10 -vf "fps=24,scale=480:272" output.avi
 
 - `-i input.mp4`: Input video file  
 - `-ac 1`: Convert audio to mono  
