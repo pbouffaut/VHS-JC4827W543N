@@ -1,20 +1,11 @@
-/*******************************************************************************
- * AVI Player example
- *
- * Dependent libraries:
- * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
- * avilib: https://github.com/lanyou1900/avilib.git
- * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
- *
- * Setup steps:
- * 1. Change your LCD parameters in Arduino_GFX setting
- * 2. Upload AVI file
- *   FFat/LittleFS:
- *     upload FFat (FatFS) data with ESP32 Sketch Data Upload:
- *     ESP32: https://github.com/lorol/arduino-esp32fs-plugin
- *   SD:
- *     Copy files to SD card
- ******************************************************************************/
+// AVI Player for the JC4827W543 development board 
+// Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
+//
+// Dependent libraries:
+// "GFX Library for Arduino" install with the Library Manager (last tested on v1.5.6)
+// avilib: https://github.com/lanyou1900/avilib.git install as zip in the Arduino IDE
+// libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
+//
 const char *root = "/root";
 char *avi_filename = (char *)"/root/output.avi";
 // char *avi_filename2 = (char *)"/root/andor_full_v10.avi";
