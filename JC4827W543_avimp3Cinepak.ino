@@ -12,7 +12,7 @@ size_t output_buf_size;
 uint16_t *output_buf;
 
 #define MAX_FILES 10
-#define ITEM_HEIGHT 30
+#define ITEM_HEIGHT 50
 String aviFileList[MAX_FILES];
 int fileCount = 0;
 
@@ -85,7 +85,6 @@ void setup()
 
 void loop() {
   touchController.read();
-  // Use the 'touches' property for detection and print debug info
   if (touchController.touches > 0) {
     Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
     int touchY = touchController.points[0].y;
@@ -93,7 +92,8 @@ void loop() {
     if (selectedIndex >= 0 && selectedIndex < fileCount) {
       // Highlight the selected item
       gfx->fillRect(0, selectedIndex * ITEM_HEIGHT, gfx->width(), ITEM_HEIGHT, RGB565_BLUE);
-      gfx->setCursor(5, selectedIndex * ITEM_HEIGHT + ITEM_HEIGHT - 10);
+      // Center the text vertically within the item
+      gfx->setCursor(5, selectedIndex * ITEM_HEIGHT + (ITEM_HEIGHT / 2) - 8);
       gfx->print(aviFileList[selectedIndex]);
       delay(500);  // Debounce delay
 
@@ -268,16 +268,14 @@ void loadAviFiles()
   aviDir.close();
 }
 
-void displayFileList()
-{
+void displayFileList() {
   gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++)
-  {
+  for (int i = 0; i < fileCount; i++) {
     int y = i * ITEM_HEIGHT;
     // Draw a border for the file list item
     gfx->drawRect(0, y, gfx->width(), ITEM_HEIGHT, RGB565_WHITE);
-    // Display file name (assumes setCursor() and print() are available)
-    gfx->setCursor(5, y + ITEM_HEIGHT - 10);
+    // Center the text vertically (assuming text height of ~16 pixels)
+    gfx->setCursor(5, y + (ITEM_HEIGHT / 2) - 8);
     gfx->print(aviFileList[i]);
   }
 }
