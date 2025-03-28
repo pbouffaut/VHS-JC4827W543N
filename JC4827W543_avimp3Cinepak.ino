@@ -48,22 +48,11 @@ void setup()
   gfx->fillScreen(RGB565_BLACK);
   touchController.begin();
 
-#ifdef GFX_BL
   // Set the backlight of the screen to High intensity
   pinMode(GFX_BL, OUTPUT);
   digitalWrite(GFX_BL, HIGH);
-#endif
-
-#ifdef AUDIO_EXTRA_PRE_INIT
-  AUDIO_EXTRA_PRE_INIT();
-#endif
 
   i2s_init();
-
-#ifdef AUDIO_MUTE
-  pinMode(AUDIO_MUTE, OUTPUT);
-  digitalWrite(AUDIO_MUTE, HIGH);
-#endif
 
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
