@@ -17,6 +17,7 @@ int fileCount = 0;
 int selectedIndex = 0;
 
 #include <PINS_JC4827W543.h>    // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
+                                // Install "Dev Device Pins" with the Library Manager (last tested on v0.0.2)
 #include "TAMC_GT911.h"         // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
 #include <SD.h>                 // Included with the Espressif Arduino Core (last tested on v3.2.0)
 #include <SD_MMC.h>             // Included with the Espressif Arduino Core (last tested on v3.2.0)
