@@ -10,7 +10,7 @@ const char *AVI_FOLDER = "/avi";
 size_t output_buf_size;
 uint16_t *output_buf;
 
-#define MAX_FILES 10    // Adjust as needed
+#define MAX_FILES 10 // Adjust as needed
 #define ITEM_HEIGHT 50
 String aviFileList[MAX_FILES];
 int fileCount = 0;
@@ -21,6 +21,7 @@ int fileCount = 0;
 #include <SD_MMC.h>          // Included with the Espressif Arduino Core (last tested on v3.2.0)
 #include "AviFunc.h"         // Included in this project
 #include "esp32_audio.h"     // Included in this project
+#include "FreeSansBold12pt7b.h" // Included in this project
 
 // Touch Controller
 #define TOUCH_SDA 8
@@ -55,6 +56,7 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 
   gfx->fillScreen(RGB565_BLACK);
+  gfx->setFont(&FreeSansBold12pt7b);
   touchController.begin();
   touchController.setRotation(ROTATION_INVERTED); // Change as needed
 
@@ -67,6 +69,10 @@ void setup()
   if (!SD_MMC.begin(root, true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_DEFAULT))
   {
     Serial.println("ERROR: SD Card mount failed!");
+    while (true)
+    {
+      /* no need to continue */
+    }
   }
   else
   {
@@ -75,6 +81,10 @@ void setup()
     if (!output_buf)
     {
       Serial.println("output_buf aligned_alloc failed!");
+      while (true)
+      {
+        /* no need to continue */
+      }
     }
 
     avi_init();
@@ -83,19 +93,22 @@ void setup()
   }
 }
 
-void loop() {
+void loop()
+{
   touchController.read();
-  if (touchController.touches > 0) {
+  if (touchController.touches > 0)
+  {
     Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
     int touchY = touchController.points[0].y;
     int selectedIndex = touchY / ITEM_HEIGHT;
-    if (selectedIndex >= 0 && selectedIndex < fileCount) {
+    if (selectedIndex >= 0 && selectedIndex < fileCount)
+    {
       // Highlight the selected item
       gfx->fillRect(0, selectedIndex * ITEM_HEIGHT, gfx->width(), ITEM_HEIGHT, RGB565_BLUE);
       // Center the text vertically within the item
       gfx->setCursor(5, selectedIndex * ITEM_HEIGHT + (ITEM_HEIGHT / 2) - 8);
       gfx->print(aviFileList[selectedIndex]);
-      delay(500);  // Debounce delay
+      delay(500); // Debounce delay
 
       // Build the full path: "/root/avi/<filename>"
       String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
@@ -268,9 +281,11 @@ void loadAviFiles()
   aviDir.close();
 }
 
-void displayFileList() {
+void displayFileList()
+{
   gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++) {
+  for (int i = 0; i < fileCount; i++)
+  {
     int y = i * ITEM_HEIGHT;
     // Draw a border for the file list item
     gfx->drawRect(0, y, gfx->width(), ITEM_HEIGHT, RGB565_WHITE);
