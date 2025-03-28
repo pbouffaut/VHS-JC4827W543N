@@ -143,6 +143,7 @@ void loop()
   delay(50);
 }
 
+/// @brief Play a single avi file store on the SD card
 void playAviFile(char *avifile)
 {
   if (avi_open(avifile))
@@ -184,7 +185,62 @@ void playAviFile(char *avifile)
   }
 }
 
-// Touch functions
+/// @brief Read the avi file list in the avi folder
+void loadAviFiles()
+{
+  File aviDir = SD_MMC.open(AVI_FOLDER);
+  if (!aviDir)
+  {
+    Serial.println("Failed to open AVI folder");
+    return;
+  }
+  fileCount = 0;
+  while (true)
+  {
+    File file = aviDir.openNextFile();
+    if (!file)
+      break;
+    if (!file.isDirectory())
+    {
+      String name = file.name();
+      if (name.endsWith(".avi") || name.endsWith(".AVI"))
+      {
+        aviFileList[fileCount++] = name;
+        if (fileCount >= MAX_FILES)
+          break;
+      }
+    }
+    file.close();
+  }
+  aviDir.close();
+}
+
+/// @brief Display the list of avi files avalaible for playback
+void displayFileList()
+{
+  gfx->fillScreen(RGB565_BLACK);
+  for (int i = 0; i < fileCount; i++)
+  {
+    int y = i * ITEM_HEIGHT;
+    int rectX = ITEM_MARGIN;
+    int rectY = y + ITEM_MARGIN;
+    int rectW = gfx->width() - 2 * ITEM_MARGIN;
+    int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
+    // Fill the rectangle with a nice background color:
+    gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_DARKCYAN);
+    // Draw a white border around the rectangle:
+    gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
+
+    // Center the AVI filename in the rectangle:
+    int16_t x1, y1;
+    uint16_t textW, textH;
+    gfx->getTextBounds(aviFileList[i].c_str(), 0, 0, &x1, &y1, &textW, &textH);
+    int textX = rectX + (rectW - textW) / 2 - x1;
+    int textY = rectY + (rectH - textH) / 2 + textH;
+    gfx->setCursor(textX, textY);
+    gfx->print(aviFileList[i]);
+  }
+}
 
 /// @brief Detects if a swipe gesture occurred and returns its type.
 /// @return SwipeType indicating the detected swipe (or NO_SWIPE if none occurred).
@@ -270,59 +326,4 @@ bool detectLeftToRightGesture_NoRead()
     }
   }
   return false;
-}
-
-void loadAviFiles()
-{
-  File aviDir = SD_MMC.open(AVI_FOLDER);
-  if (!aviDir)
-  {
-    Serial.println("Failed to open AVI folder");
-    return;
-  }
-  fileCount = 0;
-  while (true)
-  {
-    File file = aviDir.openNextFile();
-    if (!file)
-      break;
-    if (!file.isDirectory())
-    {
-      String name = file.name();
-      if (name.endsWith(".avi") || name.endsWith(".AVI"))
-      {
-        aviFileList[fileCount++] = name;
-        if (fileCount >= MAX_FILES)
-          break;
-      }
-    }
-    file.close();
-  }
-  aviDir.close();
-}
-
-void displayFileList()
-{
-  gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++)
-  {
-    int y = i * ITEM_HEIGHT;
-    int rectX = ITEM_MARGIN;
-    int rectY = y + ITEM_MARGIN;
-    int rectW = gfx->width() - 2 * ITEM_MARGIN;
-    int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
-    // Fill the rectangle with a nice background color:
-    gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_DARKCYAN);
-    // Draw a white border around the rectangle:
-    gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
-
-    // Center the AVI filename in the rectangle:
-    int16_t x1, y1;
-    uint16_t textW, textH;
-    gfx->getTextBounds(aviFileList[i].c_str(), 0, 0, &x1, &y1, &textW, &textH);
-    int textX = rectX + (rectW - textW) / 2 - x1;
-    int textY = rectY + (rectH - textH) / 2 + textH;
-    gfx->setCursor(textX, textY);
-    gfx->print(aviFileList[i]);
-  }
 }
