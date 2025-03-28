@@ -75,11 +75,7 @@ void setup()
   else
   {
     output_buf_size = gfx->width() * gfx->height() * 2;
-#if defined(RGB_PANEL) | defined(DSI_PANEL)
-    output_buf = gfx->getFramebuffer();
-#else
     output_buf = (uint16_t *)aligned_alloc(16, output_buf_size);
-#endif
     if (!output_buf)
     {
       Serial.println("output_buf aligned_alloc failed!");
