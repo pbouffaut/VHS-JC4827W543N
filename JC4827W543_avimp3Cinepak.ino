@@ -8,17 +8,25 @@
 //
 const char *root = "/root";
 const char *AVI_FOLDER = "/avi";
+size_t output_buf_size;
+uint16_t *output_buf;
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
+#include "TAMC_GT911.h" // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
+#include <SD.h>
+#include <SD_MMC.h>
+#include "AviFunc.h"
+#include "esp32_audio.h"
 
 // Touch Controller
-#include "TAMC_GT911.h" // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
 #define TOUCH_SDA 8
 #define TOUCH_SCL 4
 #define TOUCH_INT 3
 #define TOUCH_RST 38
 #define TOUCH_WIDTH 480
 #define TOUCH_HEIGHT 272
+TAMC_GT911 touchController = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, TOUCH_WIDTH, TOUCH_HEIGHT);
+
 // Enum for swipe types.
 enum SwipeType
 {
@@ -26,17 +34,6 @@ enum SwipeType
   SWIPE_RIGHT_TO_LEFT,
   SWIPE_LEFT_TO_RIGHT
 };
-
-TAMC_GT911 touchController = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, TOUCH_WIDTH, TOUCH_HEIGHT);
-
-#include <SD.h>
-#include <SD_MMC.h>
-
-size_t output_buf_size;
-uint16_t *output_buf;
-
-#include "AviFunc.h"
-#include "esp32_audio.h"
 
 void setup()
 {
