@@ -46,16 +46,21 @@ void setup()
   if (!gfx->begin())
   {
     Serial.println("gfx->begin() failed!");
+    while (true)
+    {
+      /* no need to continue */
+    }
   }
-  gfx->fillScreen(RGB565_BLACK);
-  touchController.begin();
-
   // Set the backlight of the screen to High intensity
   pinMode(GFX_BL, OUTPUT);
   digitalWrite(GFX_BL, HIGH);
 
+  gfx->fillScreen(RGB565_BLACK);
+  touchController.begin();
+
   i2s_init();
 
+  // SD Card initialization
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
@@ -80,7 +85,9 @@ void setup()
 
 void loop() {
   touchController.read();
-  if (touchController.isTouched) {
+  // Use the 'touches' property for detection and print debug info
+  if (touchController.touches > 0) {
+    Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
     int touchY = touchController.points[0].y;
     int selectedIndex = touchY / ITEM_HEIGHT;
     if (selectedIndex >= 0 && selectedIndex < fileCount) {
@@ -100,6 +107,7 @@ void loop() {
       displayFileList();
     }
   }
+  delay(50); // Short delay to prevent rapid polling
 }
 
 void playAviFile(char *avifile)
