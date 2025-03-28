@@ -11,8 +11,6 @@ size_t output_buf_size;
 uint16_t *output_buf;
 
 #define MAX_FILES 10 // Adjust as needed
-#define ITEM_HEIGHT 70
-#define ITEM_MARGIN 10
 
 String aviFileList[MAX_FILES];
 int fileCount = 0;
@@ -34,14 +32,6 @@ int selectedIndex = 0;
 #define TOUCH_WIDTH 480
 #define TOUCH_HEIGHT 272
 TAMC_GT911 touchController = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, TOUCH_WIDTH, TOUCH_HEIGHT);
-
-// Enum for swipe types.
-enum SwipeType
-{
-  NO_SWIPE,
-  SWIPE_RIGHT_TO_LEFT,
-  SWIPE_LEFT_TO_RIGHT
-};
 
 void setup()
 {
@@ -143,9 +133,6 @@ void loop()
     else if (tx >= playX && tx <= playX + playButtonSize &&
              ty >= playY && ty <= playY + playButtonSize)
     {
-      // Optionally, redraw the play button with a highlight.
-      displaySelectedFile();
-      delay(300);
       // Build the full path and play the selected file.
       String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
       char aviFilename[128];
@@ -167,9 +154,9 @@ void loop()
   delay(50);
 }
 
+// Continuously read until no touches are registered.
 void waitForTouchRelease()
 {
-  // Continuously read until no touches are registered.
   while (touchController.touches > 0)
   {
     touchController.read();
@@ -304,90 +291,4 @@ void displaySelectedFile()
                     triX, triY + playButtonSize / 4,
                     triX + playButtonSize / 2, triY,
                     RGB565_WHITE);
-}
-
-/// @brief Detects if a swipe gesture occurred and returns its type.
-/// @return SwipeType indicating the detected swipe (or NO_SWIPE if none occurred).
-SwipeType detectSwipe()
-{
-  // Note: touchController.read() must be called before this function.
-  if (detectRightToLeftGesture_NoRead())
-  {
-    return SWIPE_RIGHT_TO_LEFT;
-  }
-  else if (detectLeftToRightGesture_NoRead())
-  {
-    return SWIPE_LEFT_TO_RIGHT;
-  }
-  return NO_SWIPE;
-}
-
-/// @brief Checks for a right-to-left swipe gesture using the current touch data.
-/// @return true if a right-to-left swipe is detected.
-bool detectRightToLeftGesture_NoRead()
-{
-  const int swipeThreshold = 50; // Minimum horizontal movement (in pixels) to qualify as a swipe
-  static bool tracking = false;  // Indicates if a gesture is being tracked
-  static int startX = 0;         // x coordinate when the touch began
-  static int lastX = 0;          // Most recent x coordinate during the touch
-
-  // Use the touch state that was updated in loop()
-  if (touchController.isTouched)
-  {
-    int currentX = touchController.points[0].x;
-    if (!tracking)
-    {
-      tracking = true;
-      startX = currentX;
-    }
-    lastX = currentX;
-  }
-  else
-  {
-    if (tracking)
-    {
-      int deltaX = startX - lastX; // Positive if moved from right to left
-      tracking = false;
-      if (deltaX > swipeThreshold)
-      {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/// @brief Checks for a left-to-right swipe gesture using the current touch data.
-/// @return true if a left-to-right swipe is detected.
-bool detectLeftToRightGesture_NoRead()
-{
-  const int swipeThreshold = 50; // Minimum horizontal movement (in pixels) to qualify as a swipe
-  static bool tracking = false;  // Indicates if a gesture is being tracked
-  static int startX = 0;         // x coordinate when the touch began
-  static int lastX = 0;          // Most recent x coordinate during the touch
-
-  // Use the touch state that was updated in loop()
-  if (touchController.isTouched)
-  {
-    int currentX = touchController.points[0].x;
-    if (!tracking)
-    {
-      tracking = true;
-      startX = currentX;
-    }
-    lastX = currentX;
-  }
-  else
-  {
-    if (tracking)
-    {
-      int deltaX = lastX - startX; // Positive if moved from left to right
-      tracking = false;
-      if (deltaX > swipeThreshold)
-      {
-        return true;
-      }
-    }
-  }
-  return false;
 }
