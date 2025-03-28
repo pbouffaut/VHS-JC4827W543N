@@ -24,6 +24,10 @@ int selectedIndex = 0;
 #include "esp32_audio.h"        // Included in this project
 #include "FreeSansBold12pt7b.h" // Included in this project
 
+#define TITLE_REGION_Y (gfx->height()/3 - 30)
+#define TITLE_REGION_H 35
+#define TITLE_REGION_W (gfx->width())
+
 // Touch Controller
 #define TOUCH_SDA 8
 #define TOUCH_SCL 4
@@ -104,10 +108,11 @@ void loop()
     // Check if touch is in the left arrow area.
     if (tx < margin + arrowSize && ty > (screenH / 2 - arrowSize) && ty < (screenH / 2 + arrowSize))
     {
+      // Left arrow touched: cycle to previous file.
       selectedIndex--;
       if (selectedIndex < 0)
         selectedIndex = fileCount - 1;
-      displaySelectedFile();
+      updateTitle();
       while (touchController.touches > 0)
       {
         touchController.read();
@@ -115,13 +120,13 @@ void loop()
       }
       delay(300);
     }
-    // Check if touch is in the right arrow area.
     else if (tx > screenW - margin - arrowSize && ty > (screenH / 2 - arrowSize) && ty < (screenH / 2 + arrowSize))
     {
+      // Right arrow touched: cycle to next file.
       selectedIndex++;
       if (selectedIndex >= fileCount)
         selectedIndex = 0;
-      displaySelectedFile();
+      updateTitle();
       while (touchController.touches > 0)
       {
         touchController.read();
@@ -164,6 +169,26 @@ void waitForTouchRelease()
   }
   // Extra debounce delay to ensure that the touch state is fully cleared.
   delay(300);
+}
+
+void updateTitle() {
+  // Clear the entire title area
+  gfx->fillRect(0, TITLE_REGION_Y, TITLE_REGION_W, TITLE_REGION_H, RGB565_BLACK);
+  
+  // Retrieve the new title
+  String title = aviFileList[selectedIndex];
+  
+  // Get text dimensions for the new title
+  int16_t x1, y1;
+  uint16_t textW, textH;
+  gfx->getTextBounds(title.c_str(), 0, 0, &x1, &y1, &textW, &textH);
+  
+  // Center the text in the fixed title region:
+  int titleX = (TITLE_REGION_W - textW) / 2 - x1;
+  int titleY = TITLE_REGION_Y + (TITLE_REGION_H + textH) / 2;
+  
+  gfx->setCursor(titleX, titleY);
+  gfx->print(title);
 }
 
 /// @brief Play a single avi file store on the SD card
