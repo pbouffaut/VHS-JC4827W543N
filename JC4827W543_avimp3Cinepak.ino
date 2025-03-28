@@ -71,8 +71,6 @@ void setup()
     }
 
     avi_init();
-
-    delay(2000);
   }
 }
 
