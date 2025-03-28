@@ -16,6 +16,7 @@ uint16_t *output_buf;
 
 String aviFileList[MAX_FILES];
 int fileCount = 0;
+int selectedIndex = 0;
 
 #include <PINS_JC4827W543.h>    // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
 #include "TAMC_GT911.h"         // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
@@ -91,7 +92,7 @@ void setup()
 
     avi_init();
     loadAviFiles();
-    displayFileList();
+    displaySelectedFile();
   }
 }
 
@@ -100,47 +101,82 @@ void loop()
   touchController.read();
   if (touchController.touches > 0)
   {
-    Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
-    int touchY = touchController.points[0].y;
-    int selectedIndex = touchY / ITEM_HEIGHT;
-    if (selectedIndex >= 0 && selectedIndex < fileCount)
+    int tx = touchController.points[0].x;
+    int ty = touchController.points[0].y;
+    int screenW = gfx->width();
+    int screenH = gfx->height();
+    int arrowSize = 40;
+    int margin = 10;
+    int playButtonSize = 50;
+    int playX = (screenW - playButtonSize) / 2;
+    int playY = screenH - playButtonSize - 20;
+
+    // Check if touch is in the left arrow area.
+    if (tx < margin + arrowSize && ty > (screenH / 2 - arrowSize) && ty < (screenH / 2 + arrowSize))
     {
-      int rectX = ITEM_MARGIN;
-      int rectY = selectedIndex * ITEM_HEIGHT + ITEM_MARGIN;
-      int rectW = gfx->width() - 2 * ITEM_MARGIN;
-      int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
-      // Highlight the selected rectangle with a blue background:
-      gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_BLUE);
-      gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
-
-      // Center the text within the highlighted rectangle:
-      int16_t x1, y1;
-      uint16_t textW, textH;
-      gfx->getTextBounds(aviFileList[selectedIndex].c_str(), 0, 0, &x1, &y1, &textW, &textH);
-      int textX = rectX + (rectW - textW) / 2 - x1;
-      int textY = rectY + (rectH - textH) / 2 + textH;
-      gfx->setCursor(textX, textY);
-      gfx->print(aviFileList[selectedIndex]);
-      delay(500); // Debounce delay
-
-      // Build full file path and play the selected AVI:
+      selectedIndex--;
+      if (selectedIndex < 0)
+        selectedIndex = fileCount - 1;
+      displaySelectedFile();
+      while (touchController.touches > 0)
+      {
+        touchController.read();
+        delay(50);
+      }
+      delay(300);
+    }
+    // Check if touch is in the right arrow area.
+    else if (tx > screenW - margin - arrowSize && ty > (screenH / 2 - arrowSize) && ty < (screenH / 2 + arrowSize))
+    {
+      selectedIndex++;
+      if (selectedIndex >= fileCount)
+        selectedIndex = 0;
+      displaySelectedFile();
+      while (touchController.touches > 0)
+      {
+        touchController.read();
+        delay(50);
+      }
+      delay(300);
+    }
+    // Check if touch is in the play button area.
+    else if (tx >= playX && tx <= playX + playButtonSize &&
+             ty >= playY && ty <= playY + playButtonSize)
+    {
+      // Optionally, redraw the play button with a highlight.
+      displaySelectedFile();
+      delay(300);
+      // Build the full path and play the selected file.
       String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
       char aviFilename[128];
       fullPath.toCharArray(aviFilename, sizeof(aviFilename));
       playAviFile(aviFilename);
+      // Wait until the user fully releases the touch before refreshing the UI.
+      waitForTouchRelease();
 
-      // Wait until the touch is released to avoid re-triggering playback
-      do
+      // After playback, redisplay the selection screen.
+      displaySelectedFile();
+      while (touchController.touches > 0)
       {
         touchController.read();
         delay(50);
-      } while (touchController.touches > 0);
-
-      // Redisplay the file list UI after playback:
-      displayFileList();
+      }
+      delay(300);
     }
   }
   delay(50);
+}
+
+void waitForTouchRelease()
+{
+  // Continuously read until no touches are registered.
+  while (touchController.touches > 0)
+  {
+    touchController.read();
+    delay(50);
+  }
+  // Extra debounce delay to ensure that the touch state is fully cleared.
+  delay(300);
 }
 
 /// @brief Play a single avi file store on the SD card
@@ -215,31 +251,59 @@ void loadAviFiles()
   aviDir.close();
 }
 
-/// @brief Display the list of avi files avalaible for playback
-void displayFileList()
+/// @brief Display the selected avi file
+void displaySelectedFile()
 {
+  // Clear the screen
   gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++)
-  {
-    int y = i * ITEM_HEIGHT;
-    int rectX = ITEM_MARGIN;
-    int rectY = y + ITEM_MARGIN;
-    int rectW = gfx->width() - 2 * ITEM_MARGIN;
-    int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
-    // Fill the rectangle with a nice background color:
-    gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_DARKCYAN);
-    // Draw a white border around the rectangle:
-    gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
 
-    // Center the AVI filename in the rectangle:
-    int16_t x1, y1;
-    uint16_t textW, textH;
-    gfx->getTextBounds(aviFileList[i].c_str(), 0, 0, &x1, &y1, &textW, &textH);
-    int textX = rectX + (rectW - textW) / 2 - x1;
-    int textY = rectY + (rectH - textH) / 2 + textH;
-    gfx->setCursor(textX, textY);
-    gfx->print(aviFileList[i]);
-  }
+  int screenW = gfx->width();
+  int screenH = gfx->height();
+  int centerY = screenH / 2;
+  int arrowSize = 40; // size of the arrow icon (adjust as needed)
+  int margin = 10;    // margin from screen edge
+
+  // --- Draw Left Arrow ---
+  // The left arrow is drawn as a filled triangle at the left side.
+  gfx->fillTriangle(margin, centerY,
+                    margin + arrowSize, centerY - arrowSize / 2,
+                    margin + arrowSize, centerY + arrowSize / 2,
+                    RGB565_WHITE);
+
+  // --- Draw Right Arrow ---
+  // Draw the right arrow as a filled triangle at the right side.
+  gfx->fillTriangle(screenW - margin, centerY,
+                    screenW - margin - arrowSize, centerY - arrowSize / 2,
+                    screenW - margin - arrowSize, centerY + arrowSize / 2,
+                    RGB565_WHITE);
+
+  // --- Draw the Title ---
+  // Get the file title string.
+  String title = aviFileList[selectedIndex];
+  int16_t x1, y1;
+  uint16_t textW, textH;
+  gfx->getTextBounds(title.c_str(), 0, 0, &x1, &y1, &textW, &textH);
+  // Calculate x so the text is centered.
+  int titleX = (screenW - textW) / 2 - x1;
+  // Position the title above the play button; here we place it at roughly one-third of the screen height.
+  int titleY = screenH / 3;
+  gfx->setCursor(titleX, titleY);
+  gfx->print(title);
+
+  // --- Draw the Play Button ---
+  // Define the play button size and location.
+  int playButtonSize = 50;
+  int playX = (screenW - playButtonSize) / 2;
+  int playY = screenH - playButtonSize - 20; // 20 pixels from bottom
+  // Draw a filled circle for the button background.
+  gfx->fillCircle(playX + playButtonSize / 2, playY + playButtonSize / 2, playButtonSize / 2, RGB565_DARKGREEN);
+  // Draw a play–icon (triangle) inside the circle.
+  int triX = playX + playButtonSize / 2 - playButtonSize / 4;
+  int triY = playY + playButtonSize / 2;
+  gfx->fillTriangle(triX, triY - playButtonSize / 4,
+                    triX, triY + playButtonSize / 4,
+                    triX + playButtonSize / 2, triY,
+                    RGB565_WHITE);
 }
 
 /// @brief Detects if a swipe gesture occurred and returns its type.
