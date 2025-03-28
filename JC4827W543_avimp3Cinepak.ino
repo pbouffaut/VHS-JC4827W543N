@@ -7,8 +7,7 @@
 // libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
 //
 const char *root = "/root";
-char *avi_filename = (char *)"/root/output.avi";
-// char *avi_filename2 = (char *)"/root/andor_full_v10.avi";
+const char *AVI_FOLDER = "/avi";
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
 
@@ -89,64 +88,26 @@ void setup()
     avi_init();
 
     delay(2000);
-    listDir(SD, "/", 10); // 10 levels deep recursion
-  }
-}
-
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
-{
-  Serial.printf("Listing directory: %s\n", dirname);
-
-  File root = fs.open(dirname);
-  if (!root)
-  {
-    Serial.println("Failed to open directory");
-    return;
-  }
-  if (!root.isDirectory())
-  {
-    Serial.println("Not a directory");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file)
-  {
-    if (file.isDirectory())
-    {
-      Serial.printf("  DIR : %s\n", file.name());
-      if (levels)
-      {
-        listDir(fs, file.name(), levels - 1);
-      }
-    }
-    else
-    {
-      Serial.printf("  FILE: %s  SIZE: %d bytes\n", file.name(), file.size());
-    }
-    file = root.openNextFile();
   }
 }
 
 void loop() {
-  File aviDir = SD_MMC.open("/avi");
+  File aviDir = SD_MMC.open(AVI_FOLDER);
   if (!aviDir) {
-    Serial.println("Failed to open /avi directory");
+    Serial.println("Failed to open AVI folder");
     delay(1000);
     return;
   }
   while (true) {
     File file = aviDir.openNextFile();
     if (!file) {
-      // No more files; restart the directory iteration
       aviDir.rewindDirectory();
       break;
     }
     if (!file.isDirectory()) {
       String fileName = file.name();
       if (fileName.endsWith(".avi") || fileName.endsWith(".AVI")) {
-        // Prepend the SD card root to the file path
-        String fullPath = String(root) + "/avi/" + fileName;
+        String fullPath = String(root) + String(AVI_FOLDER) + "/" + fileName;
         Serial.printf("Playing file: %s\n", fullPath.c_str());
         char aviFilename[128];
         fullPath.toCharArray(aviFilename, sizeof(aviFilename));
@@ -157,7 +118,6 @@ void loop() {
     file.close();
   }
 }
-
 
 
 void playAviFile(char *avifile)
