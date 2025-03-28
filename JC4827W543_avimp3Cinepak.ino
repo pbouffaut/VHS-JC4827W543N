@@ -171,6 +171,7 @@ void waitForTouchRelease()
   delay(300);
 }
 
+// Update the avi title on the screen
 void updateTitle() {
   // Clear the entire title area
   gfx->fillRect(0, TITLE_REGION_Y, TITLE_REGION_W, TITLE_REGION_H, RGB565_BLACK);
@@ -191,7 +192,7 @@ void updateTitle() {
   gfx->print(title);
 }
 
-/// @brief Play a single avi file store on the SD card
+// Play a single avi file store on the SD card
 void playAviFile(char *avifile)
 {
   if (avi_open(avifile))
@@ -233,7 +234,7 @@ void playAviFile(char *avifile)
   }
 }
 
-/// @brief Read the avi file list in the avi folder
+// Read the avi file list in the avi folder
 void loadAviFiles()
 {
   File aviDir = SD_MMC.open(AVI_FOLDER);
@@ -263,7 +264,7 @@ void loadAviFiles()
   aviDir.close();
 }
 
-/// @brief Display the selected avi file
+// Display the selected avi file
 void displaySelectedFile()
 {
   // Clear the screen
