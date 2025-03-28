@@ -1,8 +1,7 @@
 // AVI Player for the JC4827W543 development board
 // Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
 //
-// Dependent libraries:
-// "GFX Library for Arduino" install with the Library Manager (last tested on v1.5.6)
+// Libraries that you need to intall as Zip in the IDE:
 // avilib: https://github.com/lanyou1900/avilib.git install as zip in the Arduino IDE
 // libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
 //
