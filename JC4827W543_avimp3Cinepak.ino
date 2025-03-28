@@ -10,7 +10,7 @@ const char *AVI_FOLDER = "/avi";
 size_t output_buf_size;
 uint16_t *output_buf;
 
-#define MAX_FILES 10
+#define MAX_FILES 10    // Adjust as needed
 #define ITEM_HEIGHT 50
 String aviFileList[MAX_FILES];
 int fileCount = 0;
