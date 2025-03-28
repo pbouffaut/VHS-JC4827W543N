@@ -57,6 +57,7 @@ void setup()
 
   gfx->fillScreen(RGB565_BLACK);
   touchController.begin();
+  touchController.setRotation(ROTATION_INVERTED); // Change as needed
 
   i2s_init();
 
