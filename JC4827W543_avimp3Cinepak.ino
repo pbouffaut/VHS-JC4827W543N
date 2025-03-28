@@ -17,12 +17,12 @@ uint16_t *output_buf;
 String aviFileList[MAX_FILES];
 int fileCount = 0;
 
-#include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
-#include "TAMC_GT911.h"      // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
-#include <SD.h>              // Included with the Espressif Arduino Core (last tested on v3.2.0)
-#include <SD_MMC.h>          // Included with the Espressif Arduino Core (last tested on v3.2.0)
-#include "AviFunc.h"         // Included in this project
-#include "esp32_audio.h"     // Included in this project
+#include <PINS_JC4827W543.h>    // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
+#include "TAMC_GT911.h"         // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
+#include <SD.h>                 // Included with the Espressif Arduino Core (last tested on v3.2.0)
+#include <SD_MMC.h>             // Included with the Espressif Arduino Core (last tested on v3.2.0)
+#include "AviFunc.h"            // Included in this project
+#include "esp32_audio.h"        // Included in this project
 #include "FreeSansBold12pt7b.h" // Included in this project
 
 // Touch Controller
@@ -95,13 +95,16 @@ void setup()
   }
 }
 
-void loop() {
+void loop()
+{
   touchController.read();
-  if (touchController.touches > 0) {
+  if (touchController.touches > 0)
+  {
     Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
     int touchY = touchController.points[0].y;
     int selectedIndex = touchY / ITEM_HEIGHT;
-    if (selectedIndex >= 0 && selectedIndex < fileCount) {
+    if (selectedIndex >= 0 && selectedIndex < fileCount)
+    {
       int rectX = ITEM_MARGIN;
       int rectY = selectedIndex * ITEM_HEIGHT + ITEM_MARGIN;
       int rectW = gfx->width() - 2 * ITEM_MARGIN;
@@ -118,13 +121,20 @@ void loop() {
       int textY = rectY + (rectH - textH) / 2 + textH;
       gfx->setCursor(textX, textY);
       gfx->print(aviFileList[selectedIndex]);
-      delay(500);  // Debounce delay
+      delay(500); // Debounce delay
 
       // Build full file path and play the selected AVI:
       String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
       char aviFilename[128];
       fullPath.toCharArray(aviFilename, sizeof(aviFilename));
       playAviFile(aviFilename);
+
+      // Wait until the touch is released to avoid re-triggering playback
+      do
+      {
+        touchController.read();
+        delay(50);
+      } while (touchController.touches > 0);
 
       // Redisplay the file list UI after playback:
       displayFileList();
@@ -291,9 +301,11 @@ void loadAviFiles()
   aviDir.close();
 }
 
-void displayFileList() {
+void displayFileList()
+{
   gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++) {
+  for (int i = 0; i < fileCount; i++)
+  {
     int y = i * ITEM_HEIGHT;
     int rectX = ITEM_MARGIN;
     int rectY = y + ITEM_MARGIN;
