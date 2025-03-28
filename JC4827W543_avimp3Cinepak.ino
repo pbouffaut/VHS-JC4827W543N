@@ -1,4 +1,4 @@
-// AVI Player for the JC4827W543 development board 
+// AVI Player for the JC4827W543 development board
 // Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
 //
 // Dependent libraries:
@@ -10,6 +10,11 @@ const char *root = "/root";
 const char *AVI_FOLDER = "/avi";
 size_t output_buf_size;
 uint16_t *output_buf;
+
+#define MAX_FILES 10
+#define ITEM_HEIGHT 30
+String aviFileList[MAX_FILES];
+int fileCount = 0;
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
 #include "TAMC_GT911.h"      // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
@@ -68,37 +73,34 @@ void setup()
     }
 
     avi_init();
+    loadAviFiles();
+    displayFileList();
   }
 }
 
 void loop() {
-  File aviDir = SD_MMC.open(AVI_FOLDER);
-  if (!aviDir) {
-    Serial.println("Failed to open AVI folder");
-    delay(1000);
-    return;
-  }
-  while (true) {
-    File file = aviDir.openNextFile();
-    if (!file) {
-      aviDir.rewindDirectory();
-      break;
+  touchController.read();
+  if (touchController.isTouched) {
+    int touchY = touchController.points[0].y;
+    int selectedIndex = touchY / ITEM_HEIGHT;
+    if (selectedIndex >= 0 && selectedIndex < fileCount) {
+      // Highlight the selected item
+      gfx->fillRect(0, selectedIndex * ITEM_HEIGHT, gfx->width(), ITEM_HEIGHT, RGB565_BLUE);
+      gfx->setCursor(5, selectedIndex * ITEM_HEIGHT + ITEM_HEIGHT - 10);
+      gfx->print(aviFileList[selectedIndex]);
+      delay(500);  // Debounce delay
+
+      // Build the full path: "/root/avi/<filename>"
+      String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
+      char aviFilename[128];
+      fullPath.toCharArray(aviFilename, sizeof(aviFilename));
+      playAviFile(aviFilename);
+
+      // After playing, redisplay the file list UI
+      displayFileList();
     }
-    if (!file.isDirectory()) {
-      String fileName = file.name();
-      if (fileName.endsWith(".avi") || fileName.endsWith(".AVI")) {
-        String fullPath = String(root) + String(AVI_FOLDER) + "/" + fileName;
-        Serial.printf("Playing file: %s\n", fullPath.c_str());
-        char aviFilename[128];
-        fullPath.toCharArray(aviFilename, sizeof(aviFilename));
-        playAviFile(aviFilename);
-        delay(5000);
-      }
-    }
-    file.close();
   }
 }
-
 
 void playAviFile(char *avifile)
 {
@@ -227,4 +229,47 @@ bool detectLeftToRightGesture_NoRead()
     }
   }
   return false;
+}
+
+void loadAviFiles()
+{
+  File aviDir = SD_MMC.open(AVI_FOLDER);
+  if (!aviDir)
+  {
+    Serial.println("Failed to open AVI folder");
+    return;
+  }
+  fileCount = 0;
+  while (true)
+  {
+    File file = aviDir.openNextFile();
+    if (!file)
+      break;
+    if (!file.isDirectory())
+    {
+      String name = file.name();
+      if (name.endsWith(".avi") || name.endsWith(".AVI"))
+      {
+        aviFileList[fileCount++] = name;
+        if (fileCount >= MAX_FILES)
+          break;
+      }
+    }
+    file.close();
+  }
+  aviDir.close();
+}
+
+void displayFileList()
+{
+  gfx->fillScreen(RGB565_BLACK);
+  for (int i = 0; i < fileCount; i++)
+  {
+    int y = i * ITEM_HEIGHT;
+    // Draw a border for the file list item
+    gfx->drawRect(0, y, gfx->width(), ITEM_HEIGHT, RGB565_WHITE);
+    // Display file name (assumes setCursor() and print() are available)
+    gfx->setCursor(5, y + ITEM_HEIGHT - 10);
+    gfx->print(aviFileList[i]);
+  }
 }
