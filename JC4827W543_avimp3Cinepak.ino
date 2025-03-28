@@ -5,13 +5,15 @@
 // avilib: https://github.com/lanyou1900/avilib.git install as zip in the Arduino IDE
 // libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
 //
-const char *root = "/root";
+const char *root = "/root"; // Do not change this, it is needed to access files properly on the SD card
 const char *AVI_FOLDER = "/avi";
 size_t output_buf_size;
 uint16_t *output_buf;
 
 #define MAX_FILES 10 // Adjust as needed
-#define ITEM_HEIGHT 50
+#define ITEM_HEIGHT 70
+#define ITEM_MARGIN 10
+
 String aviFileList[MAX_FILES];
 int fileCount = 0;
 
@@ -93,34 +95,42 @@ void setup()
   }
 }
 
-void loop()
-{
+void loop() {
   touchController.read();
-  if (touchController.touches > 0)
-  {
+  if (touchController.touches > 0) {
     Serial.printf("Touch detected: %d, (%d, %d)\n", touchController.touches, touchController.points[0].x, touchController.points[0].y);
     int touchY = touchController.points[0].y;
     int selectedIndex = touchY / ITEM_HEIGHT;
-    if (selectedIndex >= 0 && selectedIndex < fileCount)
-    {
-      // Highlight the selected item
-      gfx->fillRect(0, selectedIndex * ITEM_HEIGHT, gfx->width(), ITEM_HEIGHT, RGB565_BLUE);
-      // Center the text vertically within the item
-      gfx->setCursor(5, selectedIndex * ITEM_HEIGHT + (ITEM_HEIGHT / 2) - 8);
-      gfx->print(aviFileList[selectedIndex]);
-      delay(500); // Debounce delay
+    if (selectedIndex >= 0 && selectedIndex < fileCount) {
+      int rectX = ITEM_MARGIN;
+      int rectY = selectedIndex * ITEM_HEIGHT + ITEM_MARGIN;
+      int rectW = gfx->width() - 2 * ITEM_MARGIN;
+      int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
+      // Highlight the selected rectangle with a blue background:
+      gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_BLUE);
+      gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
 
-      // Build the full path: "/root/avi/<filename>"
+      // Center the text within the highlighted rectangle:
+      int16_t x1, y1;
+      uint16_t textW, textH;
+      gfx->getTextBounds(aviFileList[selectedIndex].c_str(), 0, 0, &x1, &y1, &textW, &textH);
+      int textX = rectX + (rectW - textW) / 2 - x1;
+      int textY = rectY + (rectH - textH) / 2 + textH;
+      gfx->setCursor(textX, textY);
+      gfx->print(aviFileList[selectedIndex]);
+      delay(500);  // Debounce delay
+
+      // Build full file path and play the selected AVI:
       String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
       char aviFilename[128];
       fullPath.toCharArray(aviFilename, sizeof(aviFilename));
       playAviFile(aviFilename);
 
-      // After playing, redisplay the file list UI
+      // Redisplay the file list UI after playback:
       displayFileList();
     }
   }
-  delay(50); // Short delay to prevent rapid polling
+  delay(50);
 }
 
 void playAviFile(char *avifile)
@@ -281,16 +291,26 @@ void loadAviFiles()
   aviDir.close();
 }
 
-void displayFileList()
-{
+void displayFileList() {
   gfx->fillScreen(RGB565_BLACK);
-  for (int i = 0; i < fileCount; i++)
-  {
+  for (int i = 0; i < fileCount; i++) {
     int y = i * ITEM_HEIGHT;
-    // Draw a border for the file list item
-    gfx->drawRect(0, y, gfx->width(), ITEM_HEIGHT, RGB565_WHITE);
-    // Center the text vertically (assuming text height of ~16 pixels)
-    gfx->setCursor(5, y + (ITEM_HEIGHT / 2) - 8);
+    int rectX = ITEM_MARGIN;
+    int rectY = y + ITEM_MARGIN;
+    int rectW = gfx->width() - 2 * ITEM_MARGIN;
+    int rectH = ITEM_HEIGHT - 2 * ITEM_MARGIN;
+    // Fill the rectangle with a nice background color:
+    gfx->fillRect(rectX, rectY, rectW, rectH, RGB565_DARKCYAN);
+    // Draw a white border around the rectangle:
+    gfx->drawRect(rectX, rectY, rectW, rectH, RGB565_WHITE);
+
+    // Center the AVI filename in the rectangle:
+    int16_t x1, y1;
+    uint16_t textW, textH;
+    gfx->getTextBounds(aviFileList[i].c_str(), 0, 0, &x1, &y1, &textW, &textH);
+    int textX = rectX + (rectW - textW) / 2 - x1;
+    int textY = rectY + (rectH - textH) / 2 + textH;
+    gfx->setCursor(textX, textY);
     gfx->print(aviFileList[i]);
   }
 }
