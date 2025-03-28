@@ -275,10 +275,6 @@ void avi_draw(int x, int y)
 void avi_close()
 {
   AVI_close(avi);
-  // if (avi_vcodec == MJPEG_CODEC_CODE)
-  // {
-  //   jpeg_dec_close(jpeg_dec);
-  // }
 #ifdef AVI_SUPPORT_AUDIO
   audbuf_read = 0;
 #endif // AVI_SUPPORT_AUDIO
