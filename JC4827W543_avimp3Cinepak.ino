@@ -128,13 +128,37 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
   }
 }
 
-void loop()
-{
-  playAviFile(avi_filename);
-  delay(5000);
-  // playAviFile(avi_filename2);
-  // delay(5000);
+void loop() {
+  File aviDir = SD_MMC.open("/avi");
+  if (!aviDir) {
+    Serial.println("Failed to open /avi directory");
+    delay(1000);
+    return;
+  }
+  while (true) {
+    File file = aviDir.openNextFile();
+    if (!file) {
+      // No more files; restart the directory iteration
+      aviDir.rewindDirectory();
+      break;
+    }
+    if (!file.isDirectory()) {
+      String fileName = file.name();
+      if (fileName.endsWith(".avi") || fileName.endsWith(".AVI")) {
+        // Prepend the SD card root to the file path
+        String fullPath = String(root) + "/avi/" + fileName;
+        Serial.printf("Playing file: %s\n", fullPath.c_str());
+        char aviFilename[128];
+        fullPath.toCharArray(aviFilename, sizeof(aviFilename));
+        playAviFile(aviFilename);
+        delay(5000);
+      }
+    }
+    file.close();
+  }
 }
+
+
 
 void playAviFile(char *avifile)
 {
