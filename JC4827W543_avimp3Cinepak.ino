@@ -12,11 +12,11 @@ size_t output_buf_size;
 uint16_t *output_buf;
 
 #include <PINS_JC4827W543.h> // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
-#include "TAMC_GT911.h" // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
-#include <SD.h>
-#include <SD_MMC.h>
-#include "AviFunc.h"
-#include "esp32_audio.h"
+#include "TAMC_GT911.h"      // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
+#include <SD.h>              // Included with the Espressif Arduino Core (last tested on v3.2.0)
+#include <SD_MMC.h>          // Included with the Espressif Arduino Core (last tested on v3.2.0)
+#include "AviFunc.h"         // Included in this project
+#include "esp32_audio.h"     // Included in this project
 
 // Touch Controller
 #define TOUCH_SDA 8
