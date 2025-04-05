@@ -1,6 +1,8 @@
 // AVI Player for the JC4827W543 development board
 // Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
 //
+// Use board "ESP32S3 Dev Module" (last tested on v3.2.0)
+//
 // Libraries that you need to intall as Zip in the IDE:
 // avilib: https://github.com/lanyou1900/avilib.git install as zip in the Arduino IDE
 // libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
