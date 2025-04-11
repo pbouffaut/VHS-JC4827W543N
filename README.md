@@ -1,4 +1,11 @@
-# JC4827W543_avimp3Cinepak
+# JC4827W543 AVI Player with Audio
+
+<a href="https://www.buymeacoffee.com/thelastoutpostworkshop" target="_blank">
+<img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee">
+</a>
+
+## Youtube Tutorial
+[<img src="https://github.com/thelastoutpostworkshop/images/blob/main/avi_player.png" width="500">](https://youtu.be/mnOzfRFQJIM)
 
 # 🎞 Convert MP4 to AVI (Cinepak + PCM_U8) using FFmpeg
 
