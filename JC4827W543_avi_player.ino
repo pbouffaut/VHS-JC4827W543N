@@ -8,7 +8,6 @@
 // avilib: https://github.com/lanyou1900/avilib.git install as zip in the Arduino IDE
 // libhelix: https://github.com/pschatzmann/arduino-libhelix.git install as zip in the Arduino IDE
 //
-const char *root = "/root"; // Do not change this, it is needed to access files properly on the SD card
 const char *AVI_FOLDER = "/avi";
 size_t output_buf_size;
 uint16_t *output_buf;
@@ -22,12 +21,15 @@ int selectedIndex = 0;
 #include <PINS_JC4827W543.h>    // Install "GFX Library for Arduino" with the Library Manager (last tested on v1.5.6)
                                 // Install "Dev Device Pins" with the Library Manager (last tested on v0.0.2)
 #include "TAMC_GT911.h"         // Install "TAMC_GT911" with the Library Manager (last tested on v1.0.2)
-#include <SD_MMC.h>             // Included with the Espressif Arduino Core (last tested on v3.2.0)
+#include <SD.h>                 // Included with the Espressif Arduino Core (last tested on v3.2.0)
 #include "AviFunc.h"            // Included in this project
 #include "esp32_audio.h"        // Included in this project
 #include "FreeSansBold12pt7b.h" // Included in this project
 
-#define TITLE_REGION_Y (gfx->height()/3 - 30)
+static SPIClass spiSD{HSPI};
+const char *sdMountPoint = "/sdcard"; 
+
+#define TITLE_REGION_Y (gfx->height() / 3 - 30)
 #define TITLE_REGION_H 35
 #define TITLE_REGION_W (gfx->width())
 
@@ -63,10 +65,8 @@ void setup()
   i2s_init();
 
   // SD Card initialization
-  pinMode(SD_CS, OUTPUT);
-  digitalWrite(SD_CS, HIGH);
-  SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
-  if (!SD_MMC.begin(root, true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_DEFAULT))
+  spiSD.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+  if (!SD.begin(SD_CS, spiSD, 10000000, sdMountPoint))
   {
     Serial.println("ERROR: SD Card mount failed!");
     while (true)
@@ -142,7 +142,7 @@ void loop()
              ty >= playY && ty <= playY + playButtonSize)
     {
       // Build the full path and play the selected file.
-      String fullPath = String(root) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
+      String fullPath = String(sdMountPoint) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
       char aviFilename[128];
       fullPath.toCharArray(aviFilename, sizeof(aviFilename));
       playAviFile(aviFilename);
@@ -175,22 +175,23 @@ void waitForTouchRelease()
 }
 
 // Update the avi title on the screen
-void updateTitle() {
+void updateTitle()
+{
   // Clear the entire title area
   gfx->fillRect(0, TITLE_REGION_Y, TITLE_REGION_W, TITLE_REGION_H, RGB565_BLACK);
-  
+
   // Retrieve the new title
   String title = aviFileList[selectedIndex];
-  
+
   // Get text dimensions for the new title
   int16_t x1, y1;
   uint16_t textW, textH;
   gfx->getTextBounds(title.c_str(), 0, 0, &x1, &y1, &textW, &textH);
-  
+
   // Center the text in the fixed title region:
   int titleX = (TITLE_REGION_W - textW) / 2 - x1;
   int titleY = TITLE_REGION_Y + (TITLE_REGION_H + textH) / 2;
-  
+
   gfx->setCursor(titleX, titleY);
   gfx->print(title);
 }
@@ -240,7 +241,7 @@ void playAviFile(char *avifile)
 // Read the avi file list in the avi folder
 void loadAviFiles()
 {
-  File aviDir = SD_MMC.open(AVI_FOLDER);
+  File aviDir = SD.open(AVI_FOLDER);
   if (!aviDir)
   {
     Serial.println("Failed to open AVI folder");
