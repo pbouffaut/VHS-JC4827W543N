@@ -33,9 +33,8 @@ const char *sdMountPoint = "/sdcard";
 #define TITLE_REGION_H 35
 #define TITLE_REGION_W (gfx->width())
 
-// Auto-play variables
-unsigned long lastVideoEndTime = 0;
-const unsigned long videoTransitionDelay = 2000; // 2 seconds between videos
+// Video playback control
+bool videoPlayed = false;
 
 void setup()
 {
@@ -91,41 +90,30 @@ void setup()
     displayStartupMessage();
     delay(3000); // Show startup message for 3 seconds
     
-    // Start auto-play if we have videos
-    if (fileCount > 0) {
-      lastVideoEndTime = millis();
-    }
+    // Videos will be played randomly when loop() runs
   }
 }
 
 void loop()
 {
-  // Auto-play logic: cycle through videos automatically
-  if (fileCount > 0) {
-    unsigned long currentTime = millis();
+  // Auto-play logic: play one random video and stop
+  if (fileCount > 0 && !videoPlayed) {
+    // Select a random video
+    selectedIndex = random(0, fileCount);
     
-    // Check if it's time to play the next video
-    if (currentTime - lastVideoEndTime >= videoTransitionDelay) {
-      // Build the full path and play the selected file
-      String fullPath = String(sdMountPoint) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
-      char aviFilename[128];
-      fullPath.toCharArray(aviFilename, sizeof(aviFilename));
-      
-      // Display current video info
-      displayCurrentVideo();
-      
-      // Play the video
-      playAviFile(aviFilename);
-      
-      // Move to next video
-      selectedIndex++;
-      if (selectedIndex >= fileCount) {
-        selectedIndex = 0; // Loop back to first video
-      }
-      
-      // Update timing for next video
-      lastVideoEndTime = millis();
-    }
+    // Build the full path and play the selected file
+    String fullPath = String(sdMountPoint) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
+    char aviFilename[128];
+    fullPath.toCharArray(aviFilename, sizeof(aviFilename));
+    
+    // Display current video info
+    displayCurrentVideo();
+    
+    // Play the video
+    playAviFile(aviFilename);
+    
+    // Mark video as played so it doesn't play again
+    videoPlayed = true;
   }
   
   delay(100); // Small delay to prevent excessive CPU usage
