@@ -24,6 +24,7 @@ int selectedIndex = 0;
 #include "AviFunc.h"            // Included in this project
 #include "esp32_audio.h"        // Included in this project
 #include "FreeSansBold12pt7b.h" // Included in this project
+#include <JPEGDecoder.h>        // Install "JPEGDecoder" with the Library Manager
 
 static SPIClass spiSD{HSPI};
 const char *sdMountPoint = "/sdcard"; 
@@ -81,6 +82,10 @@ void setup()
 
     avi_init();
     loadAviFiles();
+    
+    // Display a random image for 3 seconds
+    displayRandomImage();
+    delay(3000);
     
     // Display startup message
     displayStartupMessage();
@@ -255,4 +260,67 @@ void displayStartupMessage()
   
   gfx->setCursor(fileCountX, fileCountY);
   gfx->print(fileCountMsg);
+}
+
+// Function to display a random image from img/ folder
+void displayRandomImage() {
+  File imgDir = SD.open("/img");
+  if (!imgDir) {
+    return;
+  }
+  
+  // Count JPEG files
+  int imgCount = 0;
+  String imgFiles[20];
+  
+  while (true) {
+    File file = imgDir.openNextFile();
+    if (!file) break;
+    
+    if (!file.isDirectory()) {
+      String name = file.name();
+      if ((name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".JPG") || name.endsWith(".JPEG")) 
+          && !name.startsWith(".") && imgCount < 20) {
+        imgFiles[imgCount++] = name;
+      }
+    }
+    file.close();
+  }
+  imgDir.close();
+  
+  if (imgCount > 0) {
+    // Select random image
+    int randomIndex = random(0, imgCount);
+    String imgPath = "/img/" + imgFiles[randomIndex];
+    
+    // Display the image using the library's built-in drawJpeg method
+    File jpegFile = SD.open(imgPath);
+    if (jpegFile) {
+      // Clear screen
+      gfx->fillScreen(0x0000);
+      
+      // Simple approach - just decode and draw at 0,0
+      if (JpegDec.decodeSdFile(jpegFile)) {
+        while (JpegDec.read()) {
+          uint16_t* pImg = JpegDec.pImage;
+          uint16_t mcu_x = JpegDec.MCUx;
+          uint16_t mcu_y = JpegDec.MCUy;
+          
+          for (uint16_t py = 0; py < JpegDec.MCUHeight; py++) {
+            for (uint16_t px = 0; px < JpegDec.MCUWidth; px++) {
+              uint16_t color = pImg[py * JpegDec.MCUWidth + px];
+              uint16_t drawX = mcu_x * JpegDec.MCUWidth + px;
+              uint16_t drawY = mcu_y * JpegDec.MCUHeight + py;
+              
+              if (drawX < gfx->width() && drawY < gfx->height()) {
+                gfx->drawPixel(drawX, drawY, color);
+              }
+            }
+          }
+        }
+      }
+      
+      jpegFile.close();
+    }
+  }
 }
