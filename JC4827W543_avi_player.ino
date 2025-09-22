@@ -24,7 +24,7 @@ int selectedIndex = 0;
 #include "AviFunc.h"            // Included in this project
 #include "esp32_audio.h"        // Included in this project
 #include "FreeSansBold12pt7b.h" // Included in this project
-#include <JPEGDecoder.h>        // Install "JPEGDecoder" with the Library Manager (last tested on v2.0.0)
+#include <JPEGDecoder.h>        // Install "JPEGDecoder" with the Library Manager
 
 static SPIClass spiSD{HSPI};
 const char *sdMountPoint = "/sdcard"; 
@@ -83,9 +83,9 @@ void setup()
     avi_init();
     loadAviFiles();
     
-    // Display a random image from img/ folder for 3 seconds
+    // Display a random image for 3 seconds
     displayRandomImage();
-    delay(3000); // Show random image for 3 seconds
+    delay(3000);
     
     // Display startup message
     displayStartupMessage();
@@ -262,82 +262,65 @@ void displayStartupMessage()
   gfx->print(fileCountMsg);
 }
 
-// Function to display JPEG image from SD card using JPEGDecoder library
-void displayJPEG(const char* filename) {
-  // Clear screen first
-  gfx->fillScreen(RGB565_BLACK);
+// Function to display a random image from img/ folder
+void displayRandomImage() {
+  File imgDir = SD.open("/img");
+  if (!imgDir) {
+    return;
+  }
   
-  // Use the standard JPEGDecoder approach
-  if (JpegDec.decodeSdFile(filename) == 1) {
-    // Get image dimensions
-    uint16_t w = JpegDec.width;
-    uint16_t h = JpegDec.height;
-
-    // Calculate scaling to fit screen
-    float scale = min((float)gfx->width() / w, (float)gfx->height() / h);
-    uint16_t scaledW = w * scale;
-    uint16_t scaledH = h * scale;
-
-    // Center the image
-    uint16_t x = (gfx->width() - scaledW) / 2;
-    uint16_t y = (gfx->height() - scaledH) / 2;
-
-    // Draw the image using the library's built-in method
-    JpegDec.decodeSdFile(filename);
-    while (JpegDec.read()) {
-      uint16_t* pImg = JpegDec.pImage;
-      uint16_t mcu_x = JpegDec.MCUx;
-      uint16_t mcu_y = JpegDec.MCUy;
-
-      // Draw each MCU block
-      for (uint16_t py = 0; py < JpegDec.MCUHeight; py++) {
-        for (uint16_t px = 0; px < JpegDec.MCUWidth; px++) {
-          if (mcu_x * JpegDec.MCUWidth + px < w && mcu_y * JpegDec.MCUHeight + py < h) {
-            uint16_t color = pImg[py * JpegDec.MCUWidth + px];
-            
-            // Calculate position with scaling
-            uint16_t drawX = x + (mcu_x * JpegDec.MCUWidth + px) * scale;
-            uint16_t drawY = y + (mcu_y * JpegDec.MCUHeight + py) * scale;
-
-            if (drawX < gfx->width() && drawY < gfx->height()) {
-              gfx->drawPixel(drawX, drawY, color);
+  // Count JPEG files
+  int imgCount = 0;
+  String imgFiles[20];
+  
+  while (true) {
+    File file = imgDir.openNextFile();
+    if (!file) break;
+    
+    if (!file.isDirectory()) {
+      String name = file.name();
+      if ((name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".JPG") || name.endsWith(".JPEG")) 
+          && !name.startsWith(".") && imgCount < 20) {
+        imgFiles[imgCount++] = name;
+      }
+    }
+    file.close();
+  }
+  imgDir.close();
+  
+  if (imgCount > 0) {
+    // Select random image
+    int randomIndex = random(0, imgCount);
+    String imgPath = "/img/" + imgFiles[randomIndex];
+    
+    // Display the image using the library's built-in drawJpeg method
+    File jpegFile = SD.open(imgPath);
+    if (jpegFile) {
+      // Clear screen
+      gfx->fillScreen(0x0000);
+      
+      // Simple approach - just decode and draw at 0,0
+      if (JpegDec.decodeSdFile(jpegFile)) {
+        while (JpegDec.read()) {
+          uint16_t* pImg = JpegDec.pImage;
+          uint16_t mcu_x = JpegDec.MCUx;
+          uint16_t mcu_y = JpegDec.MCUy;
+          
+          for (uint16_t py = 0; py < JpegDec.MCUHeight; py++) {
+            for (uint16_t px = 0; px < JpegDec.MCUWidth; px++) {
+              uint16_t color = pImg[py * JpegDec.MCUWidth + px];
+              uint16_t drawX = mcu_x * JpegDec.MCUWidth + px;
+              uint16_t drawY = mcu_y * JpegDec.MCUHeight + py;
+              
+              if (drawX < gfx->width() && drawY < gfx->height()) {
+                gfx->drawPixel(drawX, drawY, color);
+              }
             }
           }
         }
       }
+      
+      jpegFile.close();
     }
-  }
-}
-
-// Function to display a random image from img/ folder
-void displayRandomImage() {
-  File imgDir = SD.open("/img");
-  if (!imgDir || !imgDir.isDirectory()) {
-    return; // No img directory
-  }
-
-  // Count image files
-  int imageCount = 0;
-  String imageFiles[20]; // Max 20 images
-  
-  File file = imgDir.openNextFile();
-  while (file && imageCount < 20) {
-    if (!file.isDirectory()) {
-      String name = file.name();
-      if (name.endsWith(".jpg") || name.endsWith(".jpeg") || 
-          name.endsWith(".JPG") || name.endsWith(".JPEG")) {
-        imageFiles[imageCount] = "/img/" + name;
-        imageCount++;
-      }
-    }
-    file.close();
-    file = imgDir.openNextFile();
-  }
-  imgDir.close();
-
-  // Select and display random image
-  if (imageCount > 0) {
-    int randomIndex = random(0, imageCount);
-    displayJPEG(imageFiles[randomIndex].c_str());
   }
 }
