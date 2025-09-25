@@ -3,7 +3,7 @@
 // Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
 //
 // Version 2.7 - TOP 50 Style Splash Screen (FINAL WORKING VERSION)
-// - Displays "startup.jpeg" image as background from root directory
+// - Displays "vhs.jpeg" image as background from root directory
 // - JSON metadata overlaid on the image (year, artist, title, notes)
 // - Handles accents and special characters
 // - Hidden files (. and _) are ignored
@@ -65,6 +65,25 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("*** ESP32 RESTARTED - NEW CODE LOADED ***");
+  
+  // Initialize random seed for truly random video selection
+  // Use ADC noise + multiple timing sources for better randomness
+  delay(200); // Longer delay to ensure millis() varies more
+  uint64_t chipId = ESP.getEfuseMac();
+  uint32_t timeMs = millis();
+  uint32_t freeHeap = ESP.getFreeHeap();
+  
+  // Read ADC noise from multiple pins for randomness
+  uint32_t adcNoise = 0;
+  for (int i = 0; i < 10; i++) {
+    adcNoise += analogRead(A0) + analogRead(A1) + analogRead(A2);
+    delayMicroseconds(100);
+  }
+  
+  uint32_t randomSeedValue = (chipId & 0xFFFFFFFF) + timeMs + freeHeap + adcNoise;
+  randomSeed(randomSeedValue);
+  Serial.printf("*** RANDOM SEED INITIALIZED: %lu (chip: %llu + time: %lu + heap: %lu + adc: %lu) ***\n", 
+                randomSeedValue, chipId, timeMs, freeHeap, adcNoise);
   if (!gfx->begin())
   {
     Serial.println("gfx->begin() failed!");
@@ -108,6 +127,15 @@ void setup()
     avi_init();
     loadAviFiles();
     
+    // Log loaded files for debugging
+    Serial.printf("*** LOADED %d VIDEO FILES ***\n", fileCount);
+    for (int i = 0; i < min(fileCount, 5); i++) {
+      Serial.printf("  [%d] %s\n", i, aviFileList[i].c_str());
+    }
+    if (fileCount > 5) {
+      Serial.printf("  ... and %d more files\n", fileCount - 5);
+    }
+    
     // Videos will be played randomly when loop() runs
   }
 }
@@ -116,8 +144,13 @@ void loop()
 {
   // Auto-play logic: play one random video and stop
   if (fileCount > 0 && !videoPlayed) {
+    // Test random numbers for debugging
+    Serial.printf("*** RANDOM TEST: %d, %d, %d, %d, %d ***\n", 
+                  random(0, 100), random(0, 100), random(0, 100), random(0, 100), random(0, 100));
+    
     // Select a random video
     selectedIndex = random(0, fileCount);
+    Serial.printf("*** RANDOM VIDEO SELECTED: %d/%d - %s ***\n", selectedIndex + 1, fileCount, aviFileList[selectedIndex].c_str());
     
     // Build the full path and play the selected file
     String fullPath = String(sdMountPoint) + String(AVI_FOLDER) + "/" + aviFileList[selectedIndex];
@@ -217,9 +250,9 @@ VideoMetadata loadVideoMetadata(String videoFileName) {
 // Show TOP 50 style splash screen with image background
 void showTop50SplashScreen(VideoMetadata metadata) {
   Serial.println("*** CORRECT CODE VERSION LOADED ***");
-  Serial.println("*** USING /startup.jpeg ***");
-  // Display startup.jpeg as background
-  displayJPEG("/startup.jpeg");
+  Serial.println("*** USING /vhs.jpeg ***");
+  // Display vhs.jpeg as background
+  displayJPEG("/vhs.jpeg");
   
   // Overlay text information on the image
   if (metadata.hasMetadata) {
