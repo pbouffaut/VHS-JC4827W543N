@@ -3,7 +3,7 @@
 // Code adapted from moononournation (https://github.com/moononournation/aviPlayer)
 //
 // Version 2.7 - TOP 50 Style Splash Screen (FINAL WORKING VERSION)
-// - Displays "top50cadre.jpeg" image as background from root directory
+// - Displays "startup.jpeg" image as background from root directory
 // - JSON metadata overlaid on the image (year, artist, title, notes)
 // - Handles accents and special characters
 // - Hidden files (. and _) are ignored
@@ -217,9 +217,9 @@ VideoMetadata loadVideoMetadata(String videoFileName) {
 // Show TOP 50 style splash screen with image background
 void showTop50SplashScreen(VideoMetadata metadata) {
   Serial.println("*** CORRECT CODE VERSION LOADED ***");
-  Serial.println("*** USING /top50cadre.jpeg ***");
-  // Display top50cadre.jpeg as background
-  displayJPEG("/top50cadre.jpeg");
+  Serial.println("*** USING /startup.jpeg ***");
+  // Display startup.jpeg as background
+  displayJPEG("/startup.jpeg");
   
   // Overlay text information on the image
   if (metadata.hasMetadata) {
