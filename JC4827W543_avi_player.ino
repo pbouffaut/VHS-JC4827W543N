@@ -160,7 +160,7 @@ void loop()
     // Load metadata and show TOP 50 splash screen
     VideoMetadata metadata = loadVideoMetadata(aviFileList[selectedIndex]);
     showTop50SplashScreen(metadata);
-    delay(5000); // Show splash for 5 seconds
+    delay(8000); // Show splash for 8 seconds
     
     // Play the video
     playAviFile(aviFilename);
@@ -174,31 +174,76 @@ void loop()
 
 // Function to remove accents from strings
 String removeAccents(String str) {
-  str.replace("à", "a");
-  str.replace("á", "a");
-  str.replace("â", "a");
-  str.replace("ã", "a");
-  str.replace("ä", "a");
-  str.replace("è", "e");
-  str.replace("é", "e");
-  str.replace("ê", "e");
-  str.replace("ë", "e");
-  str.replace("ì", "i");
-  str.replace("í", "i");
-  str.replace("î", "i");
-  str.replace("ï", "i");
-  str.replace("ò", "o");
-  str.replace("ó", "o");
-  str.replace("ô", "o");
-  str.replace("õ", "o");
-  str.replace("ö", "o");
-  str.replace("ù", "u");
-  str.replace("ú", "u");
-  str.replace("û", "u");
-  str.replace("ü", "u");
-  str.replace("ç", "c");
-  str.replace("ñ", "n");
-  return str;
+  String result = "";
+  
+  for (int i = 0; i < str.length(); i++) {
+    char c = str.charAt(i);
+    unsigned char uc = (unsigned char)c;
+    
+    // If it's a regular ASCII character (0-127), keep it
+    if (uc < 128) {
+      result += c;
+    } else {
+      // Handle multi-byte UTF-8 sequences
+      if (uc == 0xC3 && i < str.length() - 1) {
+        char next = str.charAt(i + 1);
+        unsigned char next_uc = (unsigned char)next;
+        
+        // French accented characters
+        if (next_uc >= 0xA0 && next_uc <= 0xAF) {
+          switch (next_uc) {
+            case 0xA0: result += "a"; break; // à
+            case 0xA1: result += "a"; break; // á
+            case 0xA2: result += "a"; break; // â
+            case 0xA3: result += "a"; break; // ã
+            case 0xA4: result += "a"; break; // ä
+            case 0xA7: result += "c"; break; // ç
+            case 0xA8: result += "e"; break; // è
+            case 0xA9: result += "e"; break; // é
+            case 0xAA: result += "e"; break; // ê
+            case 0xAB: result += "e"; break; // ë
+            case 0xAC: result += "i"; break; // ì
+            case 0xAD: result += "i"; break; // í
+            case 0xAE: result += "i"; break; // î
+            case 0xAF: result += "i"; break; // ï
+            default: result += "?"; break; // Replace unknown with ?
+          }
+          i++; // Skip next byte
+        } else if (next_uc >= 0xB0 && next_uc <= 0xBF) {
+          switch (next_uc) {
+            case 0xB1: result += "n"; break; // ñ
+            case 0xB2: result += "o"; break; // ò
+            case 0xB3: result += "o"; break; // ó
+            case 0xB4: result += "o"; break; // ô
+            case 0xB5: result += "o"; break; // õ
+            case 0xB6: result += "o"; break; // ö
+            case 0xB9: result += "u"; break; // ù
+            case 0xBA: result += "u"; break; // ú
+            case 0xBB: result += "u"; break; // û
+            case 0xBC: result += "u"; break; // ü
+            default: result += "?"; break; // Replace unknown with ?
+          }
+          i++; // Skip next byte
+        } else {
+          result += "?"; // Replace unknown UTF-8 with ?
+        }
+      } else if (uc == 0xC2 && i < str.length() - 1) {
+        char next = str.charAt(i + 1);
+        unsigned char next_uc = (unsigned char)next;
+        
+        if (next_uc == 0xA0) {
+          result += " "; // non-breaking space
+          i++; // Skip next byte
+        } else {
+          result += "?"; // Replace unknown with ?
+        }
+      } else {
+        result += "?"; // Replace any other non-ASCII character with ?
+      }
+    }
+  }
+  
+  return result;
 }
 
 // Load video metadata from JSON file
@@ -248,8 +293,49 @@ VideoMetadata loadVideoMetadata(String videoFileName) {
 }
 
 // Show TOP 50 style splash screen with image background
+
+// Simple function to draw text with basic line wrapping for notes
+void drawSimpleWrappedText(uint16_t x, uint16_t y, String text) {
+  // Set much smaller text size for notes
+  gfx->setTextSize(1);
+  gfx->setFont(NULL); // Use smallest font available
+  
+  // Calculate max characters based on 250 pixels width (approximately 4 pixels per character for smaller font)
+  uint16_t maxChars = 250 / 4; // About 62 characters per line
+  uint16_t currentY = y;
+  
+  for (uint16_t i = 0; i < text.length(); i += maxChars) {
+    // Find the last space before the max character limit
+    uint16_t endPos = min((uint16_t)(i + maxChars), (uint16_t)text.length());
+    if (endPos < text.length()) {
+      // Look for the last space to avoid cutting words
+      for (uint16_t j = endPos; j > i; j--) {
+        if (text.charAt(j) == ' ') {
+          endPos = j;
+          break;
+        }
+      }
+    }
+    
+    // Draw this line
+    gfx->setCursor(x, currentY);
+    gfx->print(text.substring(i, endPos));
+    
+    // Move to next line (smaller spacing for smaller text)
+    currentY += 10;
+    
+    // Stop if we're running out of screen space
+    if (currentY > gfx->height() - 20) {
+      break;
+    }
+  }
+  
+  // Reset text size back to default
+  gfx->setTextSize(1);
+}
+
 void showTop50SplashScreen(VideoMetadata metadata) {
-  Serial.println("*** CORRECT CODE VERSION LOADED ***");
+  Serial.println("*** UTF-8 ACCENT FIX VERSION LOADED ***");
   Serial.println("*** USING /vhs.jpeg ***");
   // Display vhs.jpeg as background
   displayJPEG("/vhs.jpeg");
@@ -271,10 +357,9 @@ void showTop50SplashScreen(VideoMetadata metadata) {
     gfx->setCursor(60, 160);
     gfx->print(metadata.title);
     
-    // Notes as a quote (if present)
+    // Notes as a quote (if present) with simple line wrapping
     if (metadata.notes.length() > 0) {
-      gfx->setCursor(60, 200);
-      gfx->print("\"" + metadata.notes + "\"");
+      drawSimpleWrappedText(60, 200, "\"" + metadata.notes + "\"");
     }
     
   } else {

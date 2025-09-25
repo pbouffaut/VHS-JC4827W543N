@@ -1,6 +1,7 @@
 profiles:
-  avi-player:
+  avi-player-v23:
     fqbn: esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=qio,FlashSize=4M,PartitionScheme=default,DebugLevel=none,PSRAM=opi,LoopCore=1,EventsCore=1,EraseFlash=none,JTAGAdapter=default,ZigbeeMode=default
+    description: "Version 2.3 - Direct Video Playback (No startup screens)"
     platforms:
       - platform: esp32:esp32 (3.2.0)
     libraries:
